@@ -1,0 +1,181 @@
+# =============================================================================
+# values.yaml — contrato del chart genérico `generic-app`
+# -----------------------------------------------------------------------------
+# Estos son los valores por defecto. Una app concreta (p. ej. quicktask) los
+# sobreescribe desde el repo `gitops-app-values`. El chart NO contiene nada
+# específico de ninguna app: solo expone este contrato.
+# =============================================================================
+
+# -- Sobrescribe el nombre base del release (por defecto usa el nombre del chart).
+nameOverride: ""
+# -- Sobrescribe el nombre completo de los recursos (name del release + chart).
+fullnameOverride: ""
+
+# -- Número de réplicas del Deployment. Ignorado si autoscaling.enabled=true.
+replicaCount: 1
+
+image:
+  # -- Repositorio de la imagen (sin tag).
+  repository: nginx
+  # -- Tag de la imagen. En KIND conviene un tag fijo (p. ej. "dev").
+  tag: "latest"
+  # -- Política de pull. En KIND con `kind load` usar IfNotPresent.
+  pullPolicy: IfNotPresent
+
+# -- Secrets para registries privados (lista de {name: <secret>}).
+imagePullSecrets: []
+
+serviceAccount:
+  # -- Crea un ServiceAccount dedicado para la app.
+  create: true
+  # -- Nombre del ServiceAccount. Si vacío y create=true, se autogenera.
+  name: ""
+  # -- Anotaciones del ServiceAccount (p. ej. IRSA en EKS).
+  annotations: {}
+  # -- Monta automáticamente el token del SA en los pods.
+  automountServiceAccountToken: false
+
+# -- Anotaciones y labels extra para los pods.
+podAnnotations: {}
+podLabels: {}
+
+# -- Security context a nivel de Pod.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+# -- Security context a nivel de contenedor.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  # -- Tipo de Service: ClusterIP | NodePort | LoadBalancer.
+  type: ClusterIP
+  # -- Puerto del Service.
+  port: 8080
+  # -- Puerto del contenedor al que apunta el Service.
+  targetPort: 8080
+  # -- Anotaciones del Service.
+  annotations: {}
+
+# =============================================================================
+# Variables de entorno
+# -----------------------------------------------------------------------------
+# env.config  -> ConfigMap (valores no sensibles)
+# env.secret  -> Secret (valores sensibles; en DEMO van en claro aquí, en real
+#                usar External Secrets / SOPS / Sealed Secrets).
+# Ambos se inyectan al contenedor vía envFrom (configMapRef / secretRef).
+# =============================================================================
+env:
+  # -- Pares clave/valor que van a un ConfigMap e se inyectan como env vars.
+  config: {}
+    # LOG_LEVEL: info
+  # -- Pares clave/valor que van a un Secret e se inyectan como env vars.
+  secret: {}
+    # API_KEY: "changeme"
+
+# -- Variables de entorno extra en formato nativo de Kubernetes (valueFrom, etc.).
+extraEnv: []
+  # - name: POD_IP
+  #   valueFrom:
+  #     fieldRef:
+  #       fieldPath: status.podIP
+
+# =============================================================================
+# Probes
+# -----------------------------------------------------------------------------
+# Cada probe puede desactivarse con enabled=false. El tipo por defecto es
+# httpGet; se puede cambiar a tcpSocket o exec sobreescribiendo el bloque.
+# =============================================================================
+probes:
+  liveness:
+    enabled: true
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# -- Requests/limits del contenedor. Vacío = sin límites (no recomendado en prod).
+resources: {}
+  # requests:
+  #   cpu: 50m
+  #   memory: 64Mi
+  # limits:
+  #   cpu: 250m
+  #   memory: 256Mi
+
+autoscaling:
+  # -- Habilita un HorizontalPodAutoscaler.
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Scheduling.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingress:
+  # -- Habilita el Ingress.
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+
+# =============================================================================
+# Dependencia MongoDB (opcional)
+# -----------------------------------------------------------------------------
+# StatefulSet de 1 réplica + Service headless + PVC. Para DEMO/portfolio.
+# En producción usar un chart dedicado (bitnami) o un servicio gestionado.
+# =============================================================================
+mongodb:
+  # -- Habilita el despliegue de MongoDB como dependencia en el cluster.
+  enabled: false
+  image:
+    repository: mongo
+    tag: "7.0"
+    pullPolicy: IfNotPresent
+  # -- Nombre del Service headless (DNS: <serviceName>.<ns>.svc.cluster.local).
+  serviceName: mongodb
+  # -- Puerto de Mongo.
+  port: 27017
+  # -- Nombre de la base de datos lógica (informativo para la app).
+  dbName: appdb
+  auth:
+    # -- Habilita autenticación root. Si false, Mongo arranca sin auth (solo DEMO).
+    enabled: false
+    rootUsername: root
+    rootPassword: ""   # DEMO: si vacío y auth.enabled, se autogenera.
+  persistence:
+    # -- Crea un PVC para los datos. Si false, usa emptyDir (datos efímeros).
+    enabled: true
+    size: 1Gi
+    storageClassName: ""
+  resources: {}

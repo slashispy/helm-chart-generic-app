@@ -1,0 +1,12 @@
+{{- if .Values.env.config -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "generic-app.configMapName" . }}
+  labels:
+    {{- include "generic-app.labels" . | nindent 4 }}
+data:
+  {{- range $key, $val := .Values.env.config }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,12 @@
+# Patrones de archivos que no deben empaquetarse en el chart.
+.DS_Store
+.git/
+.gitignore
+.vscode/
+.idea/
+*.tmp
+*.bak
+*.swp
+*~
+# Ejemplos: se mantienen en el repo pero no forman parte del paquete .tgz
+examples/

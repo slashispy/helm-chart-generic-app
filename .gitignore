@@ -1,0 +1,10 @@
+# Paquetes Helm empaquetados
+*.tgz
+
+# OS
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+*.swp

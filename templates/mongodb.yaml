@@ -1,0 +1,110 @@
+{{- if .Values.mongodb.enabled -}}
+{{- $mongoName := include "generic-app.mongodb.fullname" . -}}
+---
+# Service headless para DNS estable de los pods del StatefulSet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.mongodb.serviceName }}
+  labels:
+    {{- include "generic-app.mongodb.selectorLabels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "generic-app.mongodb.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: mongodb
+      port: {{ .Values.mongodb.port }}
+      targetPort: mongodb
+      protocol: TCP
+{{- if .Values.mongodb.auth.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $mongoName }}-auth
+  labels:
+    {{- include "generic-app.mongodb.selectorLabels" . | nindent 4 }}
+type: Opaque
+stringData:
+  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongodb.auth.rootUsername | quote }}
+  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongodb.auth.rootPassword | default (randAlphaNum 20) | quote }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $mongoName }}
+  labels:
+    {{- include "generic-app.mongodb.selectorLabels" . | nindent 4 }}
+spec:
+  serviceName: {{ .Values.mongodb.serviceName }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "generic-app.mongodb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "generic-app.mongodb.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+          imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+          ports:
+            - name: mongodb
+              containerPort: {{ .Values.mongodb.port }}
+              protocol: TCP
+          {{- if .Values.mongodb.auth.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ $mongoName }}-auth
+          {{- end }}
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+          {{- with .Values.mongodb.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      {{- if not .Values.mongodb.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.mongodb.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.mongodb.persistence.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.persistence.size }}
+  {{- end }}
+{{- end }}

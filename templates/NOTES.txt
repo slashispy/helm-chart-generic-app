@@ -1,0 +1,24 @@
+{{ include "generic-app.fullname" . }} desplegado correctamente.
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Imagen:    {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+Réplicas:  {{ if .Values.autoscaling.enabled }}auto ({{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }}){{ else }}{{ .Values.replicaCount }}{{ end }}
+
+Acceso al Service (ClusterIP) via port-forward:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "generic-app.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  # luego: curl http://localhost:{{ .Values.service.port }}/health
+
+{{- if .Values.ingress.enabled }}
+
+Ingress habilitado en:
+{{- range .Values.ingress.hosts }}
+  http://{{ .host }}
+{{- end }}
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+
+MongoDB (StatefulSet) disponible en:
+  {{ .Values.mongodb.serviceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.mongodb.port }}
+{{- end }}

@@ -1,0 +1,60 @@
+# -----------------------------------------------------------------------------
+# Ejemplo: desplegar `quicktask` con el chart genérico.
+# -----------------------------------------------------------------------------
+# NOTA: este archivo es solo un EJEMPLO de referencia para `helm template`/`lint`.
+# Los values productivos de quicktask viven en el repo `gitops-app-values`
+# (Fase 3). El chart no debe contener configuración específica de la app.
+# -----------------------------------------------------------------------------
+
+replicaCount: 1
+
+image:
+  repository: quicktask
+  tag: "dev"          # cargado en KIND con `kind load docker-image quicktask:dev`
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+env:
+  config:
+    MONGO_DB_NAME: quicktask
+    PORT: "8080"
+  secret:
+    # DEMO: en producción estos valores vendrían de External Secrets / SOPS.
+    MONGO_URI: "mongodb://mongodb.quicktask.svc.cluster.local:27017"
+    JWT_SECRET: "demo-not-a-real-secret"
+
+probes:
+  liveness:
+    enabled: true
+    httpGet:
+      path: /health
+      port: 8080
+  readiness:
+    enabled: true
+    httpGet:
+      path: /ready
+      port: 8080
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# Dependencia MongoDB embebida (para la demo en KIND).
+mongodb:
+  enabled: true
+  serviceName: mongodb
+  port: 27017
+  dbName: quicktask
+  auth:
+    enabled: false
+  persistence:
+    enabled: true
+    size: 1Gi

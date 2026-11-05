@@ -1,0 +1,27 @@
+apiVersion: v2
+name: generic-app
+description: >-
+  Chart genérico y reutilizable para desplegar una aplicación stateless en
+  Kubernetes (Deployment, Service, ConfigMap, Secret, ServiceAccount),
+  con Ingress opcional y una dependencia MongoDB opcional (StatefulSet).
+  El chart no conoce ninguna app concreta: expone un contrato de values.
+type: application
+
+# Versión del chart (SemVer). Se incrementa al cambiar el chart.
+version: 0.1.0
+
+# Versión de la aplicación por defecto. Normalmente se sobreescribe por values
+# (image.tag) desde el repo de values por app.
+appVersion: "1.0.0"
+
+keywords:
+  - generic
+  - stateless
+  - gitops
+  - portfolio
+home: https://github.com/slashispy/helm-chart-generic-app
+sources:
+  - https://github.com/slashispy/helm-chart-generic-app
+maintainers:
+  - name: Andrés Planas
+    url: https://github.com/slashispy
