@@ -10,6 +10,18 @@ _stateless_ en Kubernetes, con dependencias opcionales. Es el núcleo del patró
 > `Application`/`ApplicationSet` de Argo CD en
 > [`gitops-argocd-apps`](https://github.com/slashispy/gitops-argocd-apps).
 
+## Parte del circuito QuickTask GitOps
+
+| Repo | Rol |
+|---|---|
+| [`quicktask`](https://github.com/slashispy/quicktask) | Aplicación: API Go + MongoDB, JWT, `/health` y `/ready`. |
+| **`helm-chart-generic-app`** (este repo) | Helm chart genérico y reutilizable (**cómo** se despliega). |
+| [`gitops-app-values`](https://github.com/slashispy/gitops-app-values) | Values por aplicación (**qué** se despliega). |
+| [`gitops-argocd-apps`](https://github.com/slashispy/gitops-argocd-apps) | App of Apps + ApplicationSet de Argo CD (**quién** reconcilia). |
+| [`kind-gitops-utility-belt`](https://github.com/slashispy/kind-gitops-utility-belt) | Bootstrap del cluster KIND, tutorial y sitio del proyecto. |
+
+📖 [Tutorial paso a paso](https://slashispy.github.io/kind-gitops-utility-belt/tutorial) · 🌐 [Sitio del proyecto](https://slashispy.github.io/kind-gitops-utility-belt/)
+
 ## Qué despliega
 
 | Recurso | Cuándo | Descripción |
@@ -116,11 +128,3 @@ helm-chart-generic-app/
 └── examples/
     └── quicktask-values.yaml  # ejemplo de referencia (no productivo)
 ```
-
-## Parte del circuito QuickTask GitOps
-
-1. [`quicktask`](https://github.com/slashispy/quicktask) — la aplicación (API Go + MongoDB).
-2. **`helm-chart-generic-app`** — este chart genérico. ← estás aquí
-3. [`gitops-app-values`](https://github.com/slashispy/gitops-app-values) — values por app.
-4. [`gitops-argocd-apps`](https://github.com/slashispy/gitops-argocd-apps) — App of Apps + ApplicationSet.
-5. [`kind-gitops-utility-belt`](https://github.com/slashispy/kind-gitops-utility-belt) — bootstrap del circuito en KIND.
