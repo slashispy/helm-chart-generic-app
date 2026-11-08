@@ -86,6 +86,20 @@ extraEnv: []
   #     fieldRef:
   #       fieldPath: status.podIP
 
+# -- Volúmenes extra del Pod (formato nativo de Kubernetes). Útil para montar
+# Secrets/ConfigMaps como archivos (claves, certificados).
+extraVolumes: []
+  # - name: keys
+  #   secret:
+  #     secretName: my-keys
+  #     defaultMode: 0440
+
+# -- Montajes de volumen extra del contenedor (formato nativo de Kubernetes).
+extraVolumeMounts: []
+  # - name: keys
+  #   mountPath: /keys
+  #   readOnly: true
+
 # =============================================================================
 # Probes
 # -----------------------------------------------------------------------------

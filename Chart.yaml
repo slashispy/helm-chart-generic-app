@@ -8,7 +8,7 @@ description: >-
 type: application
 
 # Versión del chart (SemVer). Se incrementa al cambiar el chart.
-version: 0.1.0
+version: 0.2.0
 
 # Versión de la aplicación por defecto. Normalmente se sobreescribe por values
 # (image.tag) desde el repo de values por app.

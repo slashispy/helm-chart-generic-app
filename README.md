@@ -14,7 +14,8 @@ _stateless_ en Kubernetes, con dependencias opcionales. Es el núcleo del patró
 
 | Repo | Rol |
 |---|---|
-| [`quicktask`](https://github.com/slashispy/quicktask) | Aplicación: API Go + MongoDB, JWT, `/health` y `/ready`. |
+| [`quicktask`](https://github.com/slashispy/quicktask) | Aplicación: API Go + MongoDB, valida JWT, `/health` y `/ready`. |
+| [`quicktask-auth`](https://github.com/slashispy/quicktask-auth) | Emisor de JWT (Quarkus, client credentials, RS256). |
 | **`helm-chart-generic-app`** (este repo) | Helm chart genérico y reutilizable (**cómo** se despliega). |
 | [`gitops-app-values`](https://github.com/slashispy/gitops-app-values) | Values por aplicación (**qué** se despliega). |
 | [`gitops-argocd-apps`](https://github.com/slashispy/gitops-argocd-apps) | App of Apps + ApplicationSet de Argo CD (**quién** reconcilia). |
@@ -50,6 +51,9 @@ service:
 env:
   config: {}                # -> ConfigMap (envFrom)
   secret: {}                # -> Secret (envFrom)
+extraEnv: []                # env vars nativas de K8s (valueFrom/secretKeyRef)
+extraVolumes: []            # volúmenes extra del Pod (ej. Secret con claves)
+extraVolumeMounts: []       # montajes del contenedor (ej. /keys)
 probes:
   liveness:  { enabled: true, httpGet: { path: /health, port: 8080 } }
   readiness: { enabled: true, httpGet: { path: /ready,  port: 8080 } }
@@ -103,6 +107,10 @@ helm install quicktask . \
 - **Secretos en DEMO**: `env.secret` genera un `Secret` con los valores en claro, solo
   para portfolio/KIND. En producción se documenta el uso de External Secrets / SOPS /
   Sealed Secrets.
+- **`extraVolumes` / `extraVolumeMounts`**: formato nativo de Kubernetes para montar
+  Secrets o ConfigMaps como archivos (claves, certificados). Se añadieron en la 0.2.0
+  porque dos apps distintas del circuito (una en Go y otra en Quarkus) montan claves JWT;
+  el chart sigue sin conocer ninguna app concreta.
 - **MongoDB opcional**: `StatefulSet` de 1 réplica + `Service` headless + `PVC`,
   pensado para la demo. En producción se usaría un chart dedicado o un servicio
   gestionado.

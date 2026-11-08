@@ -49,6 +49,8 @@
       }
     },
     "extraEnv": { "type": "array" },
+    "extraVolumes": { "type": "array" },
+    "extraVolumeMounts": { "type": "array" },
     "probes": {
       "type": "object",
       "properties": {
